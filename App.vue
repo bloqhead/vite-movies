@@ -9,7 +9,7 @@
             :value="category"
             :selected="selected"
           >
-            {{ category }}
+            {{ category.replace('-',' / ') }}
           </option>
         </select>
       </div>
@@ -33,7 +33,14 @@
         <li v-for="movie in paginatedData" :key="movie.id">
           <figure>
             <img
+              v-if="movie.posterURL && movie.posterURL.length > 0"
               :src="movie.posterURL"
+              :alt="`Movie poster for ${movie.title}`"
+              loading="eager"
+            >
+            <img
+              v-else
+              src="/assets/image-placeholder@2x.png"
               :alt="`Movie poster for ${movie.title}`"
             >
             <figcaption>
@@ -53,11 +60,13 @@
 
 <script>
   import Pagination from './components/Pagination.vue'
+  import VLazyImage from 'v-lazy-image'
   import { defineComponent } from 'vue'
 
   export default defineComponent({
     components: {
-      Pagination
+      Pagination,
+      VLazyImage
     },
     data: () => ({
       loading: true,
@@ -109,11 +118,17 @@
     },
     methods: {
       fetchMovies () {
+        this.loading = true
+
         fetch(`https://sampleapis.com/movies/api/${this.selected}`)
           .then(res => res.json())
           .then(data => this.movies = data)
           .catch(err => console.log(err))
-          .finally(() => this.loading = false);
+          .finally(() => {
+            setTimeout(() => {
+              this.loading = false
+            }, 5000)
+          });
       },
       prevPage () {
         this.page--
@@ -122,7 +137,7 @@
         this.page++
       }
     }
-  })
+  });
 </script>
 
 <style>
@@ -183,13 +198,24 @@
     margin-right: 1rem;
   }
 
+  .controls select,
   .controls button {
+    height: 4rem;
     background-color: var(--color-1);
     border: 0;
-    padding: 0.5rem 2rem;
     color: #fff;
-    text-transform: uppercase;
     border-radius: 3px;
+  }
+
+  .controls button {
+    text-transform: uppercase;
+    padding: 0.5rem 2rem;
+  }
+
+  .controls select {
+    text-transform: capitalize;
+    padding-right: 1rem;
+    padding-left: 1rem;
   }
 
   .controls button:first-of-type {
@@ -201,14 +227,20 @@
   .movie-list {
     list-style: none;
     padding: 0;
-    margin: 0 -0.5rem;
-    display: flex;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 2rem;
+    grid-template-areas: ". . .";
   }
 
   .movie-list li {
-    flex: 1 0 0;
-    margin: 0.5rem 1rem;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    border: 3px solid var(--color-3);
+    border-radius: 6px;
+    overflow: hidden;
+    min-height: 421px;
   }
 
   .movie-list figure {
@@ -228,10 +260,7 @@
   }
 
   figure {
-    position: relative;
-    border: 3px solid var(--color-3);
-    border-radius: 6px;
-    overflow: hidden;
+    
   }
 
   figcaption {
@@ -242,11 +271,12 @@
     width: calc(100% - 2rem);
     padding: 1rem;
     background: linear-gradient(to top, #000 25%, rgba(0,0,0,0.35) 100%);
+    backdrop-filter: blur(5px);
+    box-shadow: 0 0 10px 5px rgba(0,0,0,0.85);
   }
 
   figure a {
     display: block;
     font-size: 1.4rem;
-    text-transform: uppercase;
   }
 </style>
